@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <img src="images/produits/${img}" class="d-block w-100" alt="${produit.nom}">
       </div>`).join("");
 
-    const lienWhatsapp = `https://wa.me/50941234567?text=${encodeURIComponent(`Bonjour, je suis intéressé par :\n- Produit : ${produit.nom}\n- Description : ${produit.description}\n- Prix : ${formatPrix(produit.prix)}`)}`;
+    const lienWhatsapp = `https://wa.me/50947634103?text=${encodeURIComponent(`Bonjour, je suis intéressé par :\n- Produit : ${produit.nom}\n- Description : ${produit.description}\n- Prix : ${formatPrix(produit.prix)}`)}`;
 
     return `
       <div class="row produit mb-4">
