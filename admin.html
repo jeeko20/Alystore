@@ -3,29 +3,149 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin - Boutique</title>
+  <title>Admin - Boutique Électronique</title>
+  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <!-- Style personnalisé -->
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding-top: 20px;
+    }
+    .admin-header {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    .form-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .image-preview {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .image-preview img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #dee2e6;
+    }
+    .admin-produit {
+      background: #f1f3f5;
+      border-left: 4px solid #0d6efd;
+    }
+    .btn-danger {
+      font-size: 0.85rem;
+    }
+    .alert {
+      border-radius: 8px;
+    }
+  </style>
+  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 </head>
-<body class="p-4">
+<body>
+  <div class="container">
+    <header class="admin-header">
+      <h1 class="text-primary">🔐 Panel d'Administration</h1>
+      <p class="text-muted">Ajoutez ou supprimez des produits facilement</p>
+    </header>
 
-<h2>Ajouter / Modifier un produit</h2>
-<form id="form-produit" class="mb-3">
-  <input type="text" id="nom" placeholder="Nom du produit" class="form-control mb-2" required />
-  <textarea id="description" placeholder="Description" class="form-control mb-2"></textarea>
-  <input type="text" id="categorie" placeholder="Catégorie" class="form-control mb-2" required />
-  <input type="text" id="prix" placeholder="Prix" class="form-control mb-2" required />
-  <input type="file" id="image" accept="image/*" class="form-control mb-2" multiple />
+    <!-- Message d'information -->
+    <div id="message" class="alert alert-info" style="display: none;">
+      En attente d'action...
+    </div>
 
-  <button type="submit" class="btn btn-primary" id="btn-submit">Ajouter le produit</button>
-</form>
+    <!-- Formulaire d'ajout de produit -->
+    <div class="form-card">
+      <h4 class="mb-4">➕ Ajouter un nouveau produit</h4>
+      <form id="form-produit">
+        <div class="mb-3">
+          <label for="nom" class="form-label">Nom du produit</label>
+          <input type="text" id="nom" class="form-control" placeholder="Ex: iPhone 15" required />
+        </div>
 
-<div id="message" class="mb-4"></div>
+        <div class="mb-3">
+          <label for="description" class="form-label">Description</label>
+          <textarea id="description" class="form-control" rows="3" placeholder="Détails du produit..." required></textarea>
+        </div>
 
-<h2>Produits existants</h2>
-<div id="liste-produits-admin"></div>
+        <div class="mb-3">
+          <label for="categorie" class="form-label">Catégorie</label>
+          <select id="categorie" class="form-select" required>
+            <option value="">Sélectionner une catégorie</option>
+            <option value="telephone">Téléphone</option>
+            <option value="tablette">Tablette</option>
+            <option value="casque">Casque</option>
+            <option value="chargeur">Chargeur</option>
+          </select>
+        </div>
 
-<script src="js/admin.js"></script>
+        <div class="mb-3">
+          <label for="prix" class="form-label">Prix</label>
+          <select id="prix" class="form-select" required>
+            <option value="">Sélectionner une fourchette</option>
+            <option value="moins-100">Moins de 100$</option>
+            <option value="100-300">100$ - 300$</option>
+            <option value="plus-300">Plus de 300$</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="image" class="form-label">Images (jusqu'à 3)</label>
+          <input type="file" id="image" class="form-control" accept="image/*" multiple />
+          <small class="text-muted">Vous pouvez sélectionner plusieurs images.</small>
+          <div class="image-preview" id="image-preview"></div>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100">✅ Ajouter le produit</button>
+      </form>
+    </div>
+
+    <!-- Liste des produits existants -->
+    <h4 class="mb-3">🗑️ Produits existants</h4>
+    <p class="text-muted mb-4">Cliquez sur <strong>Supprimer</strong> pour retirer un produit.</p>
+    <div id="liste-produits-admin"></div>
+  </div>
+
+  <!-- Script admin.js -->
+  <script src="js/admin.js"></script>
+ <script>
+  const adminPassword = "admin123"; // 🔁 Change-le !
+  const entered = prompt("Mot de passe admin :");
+  if (entered !== adminPassword) {
+    alert("Accès refusé !");
+    document.body.innerHTML = "<h2 style='color: red; text-align: center; margin-top: 50px;'>Accès interdit</h2>";
+    throw new Error("Accès refusé");
+  }
+</script>
+  <script>
+    // Prévisualisation des images
+    document.getElementById('image').addEventListener('change', function(e) {
+      const preview = document.getElementById('image-preview');
+      preview.innerHTML = '';
+      const files = e.target.files;
+      if (files.length > 3) {
+        alert("Vous ne pouvez pas sélectionner plus de 3 images.");
+        e.target.value = "";
+        return;
+      }
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const img = document.createElement('img');
+          img.src = event.target.result;
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  </script>
 </body>
 </html>
