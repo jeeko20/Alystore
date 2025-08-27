@@ -1,60 +1,43 @@
-document.addEventListener('DOMContentLoaded', async function () {
+document.addEventListener('DOMContentLoaded', function () {
   const filtreCategorie = document.getElementById('filtreCategorie');
   const filtrePrix = document.getElementById('filtrePrix');
   const listeProduits = document.getElementById('liste-produits');
   const pagination = document.getElementById('pagination');
   const searchInput = document.getElementById('search-input');
 
-  // --- Supabase ---
+  // Exemple de produits
+  const produits = [
+    { id: 1, nom: "Samsung A12", categorie: "telephone", prix: "100-300", images: ["IMG-20250806-WA0001.jpg", "IMG-20250806-WA0002.jpg"], description: "Téléphone 64Go" },
+    { id: 2, nom: "iPhone 11", categorie: "telephone", prix: "plus-300", images: ["IMG-20250806-WA0002.jpg", "IMG-20250806-WA0006.jpg"], description: "iPhone original" },
+    { id: 3, nom: "Casque JBL", categorie: "casque", prix: "moins-100", images: ["casque1.jpg"], description: "Son de qualité JBL" },
+    { id: 4, nom: "Chargeur Samsung", categorie: "chargeur", prix: "moins-100", images: ["IMG-20250806-WA0003.jpg"], description: "Charge rapide 25W" },
+    { id: 5, nom: "iPad Mini", categorie: "tablette", prix: "plus-300", images: ["IMG-20250806-WA0001.jpg"], description: "Tablette compacte" },
+    { id: 6, nom: "Tablette Lenovo", categorie: "tablette", prix: "100-300", images: ["IMG-20250806-WA0004.jpg"], description: "Écran 10.1'' HD" },
+    { id: 7, nom: "Xiaomi Redmi", categorie: "telephone", prix: "100-300", images: ["IMG-20250806-WA0002.jpg"], description: "Excellent rapport qualité/prix" },
+    { id: 8, nom: "Chargeur Infinix", categorie: "chargeur", prix: "moins-100", images: ["IMG-20250806-WA0006.jpg"], description: "Chargeur original" }
+  ];
 
-  const supabaseUrl = 'https://xswyiwlmxolfbqevqhqu.supabase.co'; // ton URL
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhzd3lpd2xteG9sZmJxZXZxaHF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMDY1MTEsImV4cCI6MjA3MTg4MjUxMX0.scmwfGWUBm9gHVcLDVNzCADYtXsTIAPySxqArZPD0qk';
-  
-  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-  let produits = [];
-  let produitsFiltres = [];
-  const parPage = 3;
+  let produitsFiltres = [...produits];
+  const parPage = 4;
   let pageActuelle = 1;
 
-  // --- Récupérer les produits depuis Supabase ---
-  async function fetchProduits() {
-    const { data, error } = await supabase.from('produits').select('*');
-    if (error) {
-      console.error(error);
-      listeProduits.innerHTML = "<p>Impossible de charger les produits.</p>";
-      return;
-    }
-
-    produits = data.map(p => ({
-      ...p,
-      images: Array.isArray(p.images) ? p.images : []
-    }));
-    produitsFiltres = [...produits];
-    afficherProduits(pageActuelle);
-  }
-
-  // --- Formatage du prix ---
   function formatPrix(code) {
     switch (code) {
       case "moins-100": return "Moins de 100$";
       case "100-300": return "100$ - 300$";
       case "plus-300": return "Plus de 300$";
-      default: return code || "";
+      default: return "";
     }
   }
 
-  // --- Générer HTML pour chaque produit ---
   function genererHTMLProduit(produit) {
     const carrouselId = `carousel-${produit.id}`;
     const imagesHTML = produit.images.map((img, i) => `
       <div class="carousel-item ${i === 0 ? 'active' : ''}">
-        <img src="${img}" class="d-block w-100" alt="${produit.nom}">
+        <img src="images/produits/${img}" class="d-block w-100" alt="${produit.nom}">
       </div>`).join("");
 
-    const lienWhatsapp = `https://wa.me/50947634103?text=${encodeURIComponent(
-      `Bonjour, je suis intéressé par :\n- Produit : ${produit.nom}\n- Description : ${produit.description}\n- Prix : ${formatPrix(produit.prix)}`
-    )}`;
+    const lienWhatsapp = `https://wa.me/50947634103?text=${encodeURIComponent(`Bonjour, je suis intéressé par :\n- Produit : ${produit.nom}\n- Description : ${produit.description}\n- Prix : ${formatPrix(produit.prix)}`)}`;
 
     return `
       <div class="row produit mb-4">
@@ -80,7 +63,6 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
     `;
   }
 
-  // --- Afficher produits filtrés ---
   function afficherProduits(page) {
     listeProduits.innerHTML = "";
     const start = (page - 1) * parPage;
@@ -94,7 +76,6 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
     genererPagination(page);
   }
 
-  // --- Pagination ---
   function genererPagination(page) {
     pagination.innerHTML = "";
     const totalPages = Math.ceil(produitsFiltres.length / parPage);
@@ -115,7 +96,6 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
     });
   }
 
-  // --- Filtrage produits ---
   function filtrerProduits() {
     const cat = filtreCategorie.value;
     const prix = filtrePrix.value;
@@ -136,17 +116,21 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
   filtrePrix.addEventListener('change', filtrerProduits);
   searchInput.addEventListener('input', filtrerProduits);
 
-  // --- Slider Hero ---
+  afficherProduits(pageActuelle);
+});
+
+
+// Slider Hero en background
+document.addEventListener('DOMContentLoaded', () => {
   const slides = document.querySelectorAll('.hero-slide');
   let current = 0;
+
   function changerImageHero() {
     slides.forEach(slide => slide.classList.remove('active'));
     slides[current].classList.add('active');
     current = (current + 1) % slides.length;
   }
+
   changerImageHero();
   setInterval(changerImageHero, 5000);
-
-  // --- Initialisation ---
-  fetchProduits();
 });
