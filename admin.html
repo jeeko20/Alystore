@@ -10,14 +10,14 @@
 </head>
 <body class="p-4">
 
-<h2>Ajouter un produit</h2>
+<h2>Ajouter / Modifier un produit</h2>
 <form id="form-produit" class="mb-3">
   <input type="text" id="nom" placeholder="Nom du produit" class="form-control mb-2" required />
   <textarea id="description" placeholder="Description" class="form-control mb-2"></textarea>
   <input type="text" id="categorie" placeholder="Catégorie" class="form-control mb-2" required />
   <input type="text" id="prix" placeholder="Prix" class="form-control mb-2" required />
-  <input type="text" id="images" placeholder="URLs des images, séparées par des virgules" class="form-control mb-2" />
-  <button type="submit" class="btn btn-primary">Ajouter le produit</button>
+  <input type="file" id="image" accept="image/*" class="form-control mb-2" />
+  <button type="submit" class="btn btn-primary" id="btn-submit">Ajouter le produit</button>
 </form>
 
 <div id="message" class="mb-4"></div>
