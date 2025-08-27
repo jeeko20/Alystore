@@ -1,40 +1,44 @@
 // --- Supabase ---
 const supabaseUrl = 'https://xswyiwlmxolfbqevqhqu.supabase.co'; // ton URL
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhzd3lpd2xteG9sZmJxZXZxaHF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMDY1MTEsImV4cCI6MjA3MTg4MjUxMX0.scmwfGWUBm9gHVcLDVNzCADYtXsTIAPySxqArZPD0qk';
-                       // clé anonyme
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhzd3lpd2xteG9sZmJxZXZxaHF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMDY1MTEsImV4cCI6MjA3MTg4MjUxMX0.scmwfGWUBm9gHVcLDVNzCADYtXsTIAPySxqArZPD0qk'; // clé anonyme
 const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- Sélection des éléments du DOM ---
+// --- DOM ---
 const formProduit = document.getElementById('form-produit');
 const nomInput = document.getElementById('nom');
 const descriptionInput = document.getElementById('description');
-const prixSelect = document.getElementById('prix');
-const categorieSelect = document.getElementById('categorie');
+const prixInput = document.getElementById('prix');
+const categorieInput = document.getElementById('categorie');
 const imageInput = document.getElementById('image');
 const listeProduitsAdmin = document.getElementById('liste-produits-admin');
 
-// --- Fonction pour uploader une image ---
+// --- Upload image ---
 async function uploadImage(file) {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-  const { data, error } = await supabase.storage
-    .from('produits') // nom du bucket
-    .upload(fileName, file);
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const { data, error } = await supabase.storage
+      .from('produits') // bucket
+      .upload(fileName, file);
 
-  if (error) {
-    console.error(error);
+    console.log("Upload Data:", data);
+    console.log("Upload Error:", error);
+
+    if (error) throw error;
+
+    const { publicUrl } = supabase.storage.from('produits').getPublicUrl(fileName);
+    return publicUrl;
+  } catch (err) {
+    console.error("Erreur upload image:", err.message);
     return null;
   }
-  // Retourne l'URL publique de l'image
-  const { publicUrl } = supabase.storage.from('produits').getPublicUrl(fileName);
-  return publicUrl;
 }
 
-// --- Ajouter un produit ---
+// --- Ajouter produit ---
 formProduit.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  if (!nomInput.value || !descriptionInput.value || !prixSelect.value || !categorieSelect.value) {
+  if (!nomInput.value || !descriptionInput.value || !prixInput.value || !categorieInput.value) {
     alert("Veuillez remplir tous les champs");
     return;
   }
@@ -47,51 +51,55 @@ formProduit.addEventListener('submit', async (e) => {
     }
   }
 
-  const { data, error } = await supabase.from('produits').insert([{
-    nom: nomInput.value,
-    description: descriptionInput.value,
-    prix: prixSelect.value,
-    categorie: categorieSelect.value,
-    images: urlsImages
-  }]);
+  try {
+    const { data, error } = await supabase.from('produits').insert([{
+      nom: nomInput.value,
+      description: descriptionInput.value,
+      prix: prixInput.value,
+      categorie: categorieInput.value,
+      images: urlsImages
+    }]);
 
-  if (error) {
-    console.error(error);
-    alert("Erreur lors de l'ajout du produit");
-  } else {
+    if (error) throw error;
+
     alert("Produit ajouté avec succès !");
     formProduit.reset();
     fetchProduitsAdmin();
+  } catch (err) {
+    console.error("Erreur ajout produit:", err.message);
+    alert("Erreur lors de l'ajout du produit");
   }
 });
 
-// --- Récupérer tous les produits pour l'admin ---
+// --- Afficher produits admin ---
 async function fetchProduitsAdmin() {
-  const { data, error } = await supabase.from('produits').select('*');
-  if (error) {
-    console.error(error);
-    return;
-  }
+  try {
+    const { data, error } = await supabase.from('produits').select('*');
+    if (error) throw error;
 
-  listeProduitsAdmin.innerHTML = "";
-  data.forEach(produit => {
-    const div = document.createElement('div');
-    div.classList.add('admin-produit');
-    div.innerHTML = `
-      <strong>${produit.nom}</strong> - ${produit.description} - ${produit.categorie} - ${produit.prix}
-      <button class="btn btn-danger btn-sm" data-id="${produit.id}">Supprimer</button>
-    `;
-    listeProduitsAdmin.appendChild(div);
+    listeProduitsAdmin.innerHTML = "";
 
-    // Bouton supprimer
-    div.querySelector('button').addEventListener('click', async () => {
-      if (confirm("Voulez-vous vraiment supprimer ce produit ?")) {
-        const { error } = await supabase.from('produits').delete().eq('id', produit.id);
-        if (error) console.error(error);
-        else fetchProduitsAdmin();
-      }
+    data.forEach(produit => {
+      const div = document.createElement('div');
+      div.classList.add('admin-produit', 'mb-2', 'p-2', 'border', 'rounded');
+      div.innerHTML = `
+        <strong>${produit.nom}</strong> - ${produit.description} - ${produit.categorie} - ${produit.prix}
+        <button class="btn btn-danger btn-sm ms-2" data-id="${produit.id}">Supprimer</button>
+      `;
+      listeProduitsAdmin.appendChild(div);
+
+      // Supprimer produit
+      div.querySelector('button').addEventListener('click', async () => {
+        if (confirm("Voulez-vous vraiment supprimer ce produit ?")) {
+          const { error } = await supabase.from('produits').delete().eq('id', produit.id);
+          if (error) console.error("Erreur suppression:", error);
+          fetchProduitsAdmin();
+        }
+      });
     });
-  });
+  } catch (err) {
+    console.error("Erreur fetch produits admin:", err.message);
+  }
 }
 
 // --- Initialisation ---

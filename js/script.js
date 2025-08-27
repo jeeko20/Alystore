@@ -6,14 +6,15 @@ document.addEventListener('DOMContentLoaded', async function () {
   const searchInput = document.getElementById('search-input');
 
   // --- Supabase ---
-  const supabaseUrl = 'https://xswyiwlmxolfbqevqhqu.supabase.co'; // <-- remplace par ton URL
+
+  const supabaseUrl = 'https://xswyiwlmxolfbqevqhqu.supabase.co'; // ton URL
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhzd3lpd2xteG9sZmJxZXZxaHF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMDY1MTEsImV4cCI6MjA3MTg4MjUxMX0.scmwfGWUBm9gHVcLDVNzCADYtXsTIAPySxqArZPD0qk';
-                      // <-- remplace par ta clé
+  
   const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
   let produits = [];
   let produitsFiltres = [];
-  const parPage = 3; // nombre de produits par page
+  const parPage = 3;
   let pageActuelle = 1;
 
   // --- Récupérer les produits depuis Supabase ---
@@ -24,9 +25,10 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
       listeProduits.innerHTML = "<p>Impossible de charger les produits.</p>";
       return;
     }
+
     produits = data.map(p => ({
       ...p,
-      images: p.images || [] // s'assurer que images est un tableau
+      images: Array.isArray(p.images) ? p.images : []
     }));
     produitsFiltres = [...produits];
     afficherProduits(pageActuelle);
@@ -42,7 +44,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
     }
   }
 
-  // --- Générer le HTML pour chaque produit ---
+  // --- Générer HTML pour chaque produit ---
   function genererHTMLProduit(produit) {
     const carrouselId = `carousel-${produit.id}`;
     const imagesHTML = produit.images.map((img, i) => `
@@ -50,7 +52,9 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
         <img src="${img}" class="d-block w-100" alt="${produit.nom}">
       </div>`).join("");
 
-    const lienWhatsapp = `https://wa.me/50947634103?text=${encodeURIComponent(`Bonjour, je suis intéressé par :\n- Produit : ${produit.nom}\n- Description : ${produit.description}\n- Prix : ${formatPrix(produit.prix)}`)}`;
+    const lienWhatsapp = `https://wa.me/50947634103?text=${encodeURIComponent(
+      `Bonjour, je suis intéressé par :\n- Produit : ${produit.nom}\n- Description : ${produit.description}\n- Prix : ${formatPrix(produit.prix)}`
+    )}`;
 
     return `
       <div class="row produit mb-4">
@@ -76,7 +80,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
     `;
   }
 
-  // --- Afficher les produits filtrés avec pagination ---
+  // --- Afficher produits filtrés ---
   function afficherProduits(page) {
     listeProduits.innerHTML = "";
     const start = (page - 1) * parPage;
@@ -90,7 +94,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
     genererPagination(page);
   }
 
-  // --- Générer la pagination ---
+  // --- Pagination ---
   function genererPagination(page) {
     pagination.innerHTML = "";
     const totalPages = Math.ceil(produitsFiltres.length / parPage);
