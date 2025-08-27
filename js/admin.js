@@ -20,24 +20,29 @@ const messageDiv = document.getElementById('message') || (() => {
 
 // --- Upload image ---
 async function uploadImage(file) {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('produits')
+      .upload(fileName, file);
 
-  const { data, error } = await supabase.storage
-    .from('produits') // bucket "produits"
-    .upload(fileName, file);
+    if (error) {
+      console.error("❌ Erreur upload:", error.message);
+      return null;
+    }
 
-  if (error) {
-    console.error("❌ Erreur upload:", error.message);
+    // ✅ Récupérer l'URL publique
+    const { data: urlData } = supabase.storage
+      .from('produits')
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  } catch (err) {
+    console.error("❌ Erreur upload:", err.message);
     return null;
   }
-
-  // ✅ Récupérer l'URL publique
-  const { data: publicData } = supabase.storage
-    .from('produits')
-    .getPublicUrl(fileName);
-
-  return publicData.publicUrl; // retourne l'URL
 }
 
 // --- Ajouter produit ---
@@ -64,28 +69,33 @@ formProduit.addEventListener('submit', async (e) => {
     }
   }
 
-  // ✅ Insérer dans la table
-  const { data, error } = await supabase
-    .from('produits')
-    .insert([
-      {
-        nom: nomInput.value,
-        description: descriptionInput.value,
-        prix: prixInput.value,
-        categorie: categorieInput.value,
-        images: urlsImages,
-      }
-    ]);
+  try {
+    const { data, error } = await supabase
+      .from('produits')
+      .insert([
+        {
+          nom: nomInput.value,
+          description: descriptionInput.value,
+          prix: prixInput.value,
+          categorie: categorieInput.value,
+          images: urlsImages,
+        }
+      ]);
 
-  if (error) {
-    console.error("❌ Erreur Supabase:", error);
+    if (error) {
+      console.error("❌ Erreur insertion:", error.message);
+      messageDiv.className = 'alert alert-danger';
+      messageDiv.textContent = `❌ Échec: ${error.message}`;
+    } else {
+      messageDiv.className = 'alert alert-success';
+      messageDiv.textContent = '✅ Produit ajouté avec succès !';
+      formProduit.reset();
+      fetchProduitsAdmin();
+    }
+  } catch (err) {
+    console.error("❌ Erreur générale:", err.message);
     messageDiv.className = 'alert alert-danger';
-    messageDiv.textContent = `❌ Échec: ${error.message}`;
-  } else {
-    messageDiv.className = 'alert alert-success';
-    messageDiv.textContent = '✅ Produit ajouté avec succès !';
-    formProduit.reset();
-    fetchProduitsAdmin(); // rafraîchit la liste
+    messageDiv.textContent = '❌ Une erreur est survenue.';
   }
 });
 
@@ -104,10 +114,10 @@ async function fetchProduitsAdmin() {
 
     data.forEach(produit => {
       const div = document.createElement('div');
-      div.classList.add('admin-produit', 'mb-2', 'p-2', 'border', 'rounded', 'bg-light');
+      div.classList.add('admin-produit', 'mb-2', 'p-2', 'border', 'rounded');
       div.innerHTML = `
         <strong>${produit.nom}</strong> - ${produit.categorie} - ${produit.prix}
-        <button class="btn btn-danger btn-sm float-end" data-id="${produit.id}">🗑️ Supprimer</button>
+        <button class="btn btn-danger btn-sm ms-2" data-id="${produit.id}">🗑️ Supprimer</button>
       `;
       listeProduitsAdmin.appendChild(div);
 
@@ -115,7 +125,7 @@ async function fetchProduitsAdmin() {
         if (confirm("Supprimer ce produit ?")) {
           const { error } = await supabase.from('produits').delete().eq('id', produit.id);
           if (error) {
-            alert("Erreur suppression: " + error.message);
+            alert("Erreur suppression");
           } else {
             fetchProduitsAdmin();
           }
