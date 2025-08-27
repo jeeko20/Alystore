@@ -11,14 +11,12 @@ const prixInput = document.getElementById('prix');
 const categorieInput = document.getElementById('categorie');
 const imageInput = document.getElementById('image');
 const listeProduitsAdmin = document.getElementById('liste-produits-admin');
-const messageDiv = document.getElementById('message') || document.createElement('div');
-
-// Ajoute le message s'il n'existe pas
-if (!document.getElementById('message')) {
-  formProduit.parentNode.insertBefore(messageDiv, formProduit.nextSibling);
-  messageDiv.id = 'message';
-  messageDiv.className = 'mb-3';
-}
+const messageDiv = document.getElementById('message') || (() => {
+  const div = document.createElement('div');
+  div.id = 'message';
+  formProduit.parentNode.insertBefore(div, formProduit.nextSibling);
+  return div;
+})();
 
 // --- Upload image ---
 async function uploadImage(file) {
@@ -30,7 +28,7 @@ async function uploadImage(file) {
     .upload(fileName, file);
 
   if (error) {
-    console.error("Erreur upload:", error.message);
+    console.error("❌ Erreur upload:", error.message);
     return null;
   }
 
@@ -47,11 +45,11 @@ formProduit.addEventListener('submit', async (e) => {
   e.preventDefault();
   messageDiv.style.display = 'block';
   messageDiv.className = 'alert alert-info';
-  messageDiv.textContent = 'Envoi en cours...';
+  messageDiv.textContent = '📤 Envoi en cours...';
 
   if (!nomInput.value || !descriptionInput.value || !prixInput.value || !categorieInput.value) {
     messageDiv.className = 'alert alert-danger';
-    messageDiv.textContent = 'Veuillez remplir tous les champs.';
+    messageDiv.textContent = '❌ Veuillez remplir tous les champs.';
     return;
   }
 
@@ -75,14 +73,14 @@ formProduit.addEventListener('submit', async (e) => {
         description: descriptionInput.value,
         prix: prixInput.value,
         categorie: categorieInput.value,
-        images: urlsImages, // tableau d'URLs
+        images: urlsImages,
       }
     ]);
 
   if (error) {
-    console.error("Erreur Supabase:", error);
+    console.error("❌ Erreur Supabase:", error);
     messageDiv.className = 'alert alert-danger';
-    messageDiv.textContent = `Erreur: ${error.message}`;
+    messageDiv.textContent = `❌ Échec: ${error.message}`;
   } else {
     messageDiv.className = 'alert alert-success';
     messageDiv.textContent = '✅ Produit ajouté avec succès !';
@@ -117,7 +115,7 @@ async function fetchProduitsAdmin() {
         if (confirm("Supprimer ce produit ?")) {
           const { error } = await supabase.from('produits').delete().eq('id', produit.id);
           if (error) {
-            alert("Erreur suppression");
+            alert("Erreur suppression: " + error.message);
           } else {
             fetchProduitsAdmin();
           }
@@ -125,7 +123,7 @@ async function fetchProduitsAdmin() {
       });
     });
   } catch (err) {
-    console.error("Erreur fetch:", err.message);
+    console.error("❌ Erreur fetch:", err.message);
     listeProduitsAdmin.innerHTML = '<p>Erreur de chargement.</p>';
   }
 }
