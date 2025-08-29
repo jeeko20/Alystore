@@ -4,148 +4,206 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin - Boutique Électronique</title>
-  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <!-- Style personnalisé -->
   <style>
-    body {
-      background-color: #f8f9fa;
-      padding-top: 20px;
-    }
-    .admin-header {
-      margin-bottom: 2rem;
-      text-align: center;
-    }
-    .form-card {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      padding: 2rem;
-      margin-bottom: 2rem;
-    }
-    .image-preview {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-    }
-    .image-preview img {
-      width: 100px;
-      height: 100px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 2px solid #dee2e6;
-    }
-    .admin-produit {
-      background: #f1f3f5;
-      border-left: 4px solid #0d6efd;
-    }
-    .btn-danger {
-      font-size: 0.85rem;
-    }
-    .alert {
-      border-radius: 8px;
-    }
+    body { padding: 20px; background: #f8f9fa; }
+    .produit-admin { background: white; }
+    .hero-content { margin-top: 40px; }
   </style>
-  <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <header class="admin-header">
-      <h1 class="text-primary">🔐 Panel d'Administration</h1>
-      <p class="text-muted">Ajoutez ou supprimez des produits facilement</p>
-    </header>
 
-    <!-- Message d'information -->
-    <div id="message" class="alert alert-info" style="display: none;">
-      En attente d'action...
-    </div>
+<!-- 🔐 Protection mot de passe -->
+<script>
+  const MOT_DE_PASSE = "admin123";
+  function demanderMotDePasse() {
+    const password = prompt("Entrez le mot de passe pour accéder à l'administration :");
+    if (password !== MOT_DE_PASSE) {
+      alert("Mot de passe incorrect !");
+      window.location.href = "index.html";
+    }
+  }
+  demanderMotDePasse();
+</script>
 
-    <!-- Formulaire d'ajout de produit -->
-    <div class="form-card">
-      <h4 class="mb-4">➕ Ajouter un nouveau produit</h4>
-      <form id="form-produit">
-        <div class="mb-3">
-          <label for="nom" class="form-label">Nom du produit</label>
-          <input type="text" id="nom" class="form-control" placeholder="Ex: iPhone 15" required />
-        </div>
-
-        <div class="mb-3">
-          <label for="description" class="form-label">Description</label>
-          <textarea id="description" class="form-control" rows="3" placeholder="Détails du produit..." required></textarea>
-        </div>
-
-        <div class="mb-3">
-          <label for="categorie" class="form-label">Catégorie</label>
-          <select id="categorie" class="form-select" required>
-            <option value="">Sélectionner une catégorie</option>
-            <option value="telephone">Téléphone</option>
-            <option value="tablette">Tablette</option>
-            <option value="casque">Casque</option>
-            <option value="chargeur">Chargeur</option>
-          </select>
-        </div>
-
-        <div class="mb-3">
-          <label for="prix" class="form-label">Prix</label>
-          <select id="prix" class="form-select" required>
-            <option value="">Sélectionner une fourchette</option>
-            <option value="moins-100">Moins de 100$</option>
-            <option value="100-300">100$ - 300$</option>
-            <option value="plus-300">Plus de 300$</option>
-          </select>
-        </div>
-
-        <div class="mb-3">
-          <label for="image" class="form-label">Images (jusqu'à 3)</label>
-          <input type="file" id="image" class="form-control" accept="image/*" multiple />
-          <small class="text-muted">Vous pouvez sélectionner plusieurs images.</small>
-          <div class="image-preview" id="image-preview"></div>
-        </div>
-
-        <button type="submit" class="btn btn-success w-100">✅ Ajouter le produit</button>
-      </form>
-    </div>
-
-    <!-- Liste des produits existants -->
-    <h4 class="mb-3">🗑️ Produits existants</h4>
-    <p class="text-muted mb-4">Cliquez sur <strong>Supprimer</strong> pour retirer un produit.</p>
-    <div id="liste-produits-admin"></div>
+<div class="container">
+  <div class="hero-content text-center mb-4">
+    <h1>🛠 Admin - Ajouter & Supprimer Produits</h1>
+    <a href="index.html" class="btn btn-secondary">← Retour à l'accueil</a>
   </div>
 
-  <!-- Script admin.js -->
-  <script src="js/admin.js"></script>
- <script>
-  const adminPassword = "admin123"; // 🔁 Change-le !
-  const entered = prompt("Mot de passe admin :");
-  if (entered !== adminPassword) {
-    alert("Accès refusé !");
-    document.body.innerHTML = "<h2 style='color: red; text-align: center; margin-top: 50px;'>Accès interdit</h2>";
-    throw new Error("Accès refusé");
-  }
-</script>
-  <script>
-    // Prévisualisation des images
-    document.getElementById('image').addEventListener('change', function(e) {
-      const preview = document.getElementById('image-preview');
-      preview.innerHTML = '';
-      const files = e.target.files;
-      if (files.length > 3) {
-        alert("Vous ne pouvez pas sélectionner plus de 3 images.");
-        e.target.value = "";
+  <!-- Formulaire d'ajout -->
+  <form id="form-produit" class="mb-5 p-4 bg-white rounded shadow">
+    <h3>Ajouter un produit</h3>
+    <div class="mb-3">
+      <label class="form-label">Nom</label>
+      <input type="text" id="nom" class="form-control" required>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Catégorie</label>
+        <select id="categorie" class="form-select">
+          <option value="telephone">Téléphone</option>
+          <option value="tablette">Tablette</option>
+          <option value="casque">Casque</option>
+          <option value="chargeur">Chargeur</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Prix</label>
+        <select id="prix" class="form-select">
+          <option value="moins-100">Moins de 100$</option>
+          <option value="100-300">100$ - 300$</option>
+          <option value="plus-300">Plus de 300$</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Image(s)</label>
+        <input type="file" id="images" class="form-control" multiple accept="image/*">
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Description</label>
+      <textarea id="description" class="form-control" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Ajouter le produit</button>
+  </form>
+
+  <!-- Liste des produits -->
+  <h2>🗑 Supprimer un produit</h2>
+  <div id="liste-admin-produits"></div>
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js"></script>
+<script>
+  const supabase = window.supabase.createClient(
+    "https://xswyiwlmxolfbqevqhqu.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhzd3lpd2xteG9sZmJxZXZxaHF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMDY1MTEsImV4cCI6MjA3MTg4MjUxMX0.scmwfGWUBm9gHVcLDVNzCADYtXsTIAPySxqArZPD0qk"
+  );
+
+  // Ajouter un produit
+  document.getElementById("form-produit").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const nom = document.getElementById("nom").value;
+    const categorie = document.getElementById("categorie").value;
+    const prix = document.getElementById("prix").value;
+    const description = document.getElementById("description").value;
+    const fichiers = document.getElementById("images").files;
+
+    if (fichiers.length === 0) {
+      alert("Veuillez sélectionner au moins une image.");
+      return;
+    }
+
+    let nomsImages = [];
+    for (let i = 0; i < fichiers.length; i++) {
+      const file = fichiers[i];
+      const filePath = `produits/${Date.now()}_${file.name}`;
+      const { data, error } = await supabase.storage.from("produits").upload(filePath, file);
+      if (error) {
+        alert("Erreur upload: " + error.message);
         return;
       }
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          const img = document.createElement('img');
-          img.src = event.target.result;
-          preview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-      });
+      nomsImages.push(data.path); // <-- Stocker le chemin relatif
+    }
+
+    const { error } = await supabase.from("produits").insert([
+      { nom, categorie, prix, description, images: nomsImages }
+    ]);
+
+    if (error) {
+      alert("Erreur: " + error.message);
+    } else {
+      alert("✅ Produit ajouté !");
+      document.getElementById("form-produit").reset();
+      chargerProduitsAdmin();
+    }
+  });
+
+  // Supprimer produit + images
+ // ✅ Supprimer produit + images du bucket
+async function supprimerProduit(id) {
+  if (!confirm("Voulez-vous vraiment supprimer ce produit et ses images ?")) return;
+
+  // 🔽 Récupérer le produit (et ses images)
+  const { data: produit, error: fetchError } = await supabase
+    .from("produits")
+    .select("images")
+    .eq("id", id)
+    .single();
+
+  if (fetchError) {
+    alert("Erreur lors de la récupération du produit : " + fetchError.message);
+    return;
+  }
+
+  // 🔽 Supprimer les images du bucket
+  if (produit.images && Array.isArray(produit.images) && produit.images.length > 0) {
+    const { error: removeError } = await supabase
+      .storage
+      .from("produits") // ⚠️ Nom du bucket
+      .remove(produit.images); // ✅ Tableau de chemins
+
+    if (removeError) {
+      console.error("Erreur suppression images:", removeError.message);
+      alert("⚠️ Les images n'ont pas pu être supprimées : " + removeError.message);
+      // On continue quand même vers la suppression de la DB
+    }
+  }
+
+  // 🔽 Supprimer le produit de la table
+  const { error: deleteError } = await supabase
+    .from("produits")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) {
+    alert("Erreur suppression produit: " + deleteError.message);
+  } else {
+    alert("✅ Produit et images supprimés !");
+    chargerProduitsAdmin(); // Rafraîchir la liste
+  }
+}
+
+  // Charger les produits existants
+  async function chargerProduitsAdmin() {
+    const { data: produits, error } = await supabase.from("produits").select("*");
+    if (error) {
+      console.error("Erreur chargement admin:", error.message);
+      return;
+    }
+
+    const container = document.getElementById("liste-admin-produits");
+    container.innerHTML = produits.length === 0 ? "<p>Aucun produit disponible.</p>" : "";
+
+    produits.forEach(produit => {
+      const premierImg = produit.images?.[0];
+      let urlImage = "https://via.placeholder.com/50";
+      if (premierImg) {
+        const { data } = supabase.storage.from("produits").getPublicUrl(premierImg);
+        urlImage = data?.publicUrl || urlImage;
+      }
+
+      const div = document.createElement("div");
+      div.className = "produit-admin mb-2 p-2 border rounded d-flex align-items-center";
+
+      div.innerHTML = `
+        <img src="${urlImage}" width="50" height="50" style="object-fit: cover; margin-right: 10px;">
+        <span>${produit.nom}</span>
+        <button class="btn btn-danger btn-sm ms-auto">Supprimer</button>
+      `;
+
+      const btnSupprimer = div.querySelector("button");
+      btnSupprimer.addEventListener("click", () => supprimerProduit(produit.id));
+
+      container.appendChild(div);
     });
-  </script>
+  }
+  
+  // Charger au démarrage
+  chargerProduitsAdmin();
+</script>
+
 </body>
 </html>

@@ -1,43 +1,60 @@
-document.addEventListener('DOMContentLoaded', function () {
+// ⚡ Initialisation correcte de Supabase
+const supabase = window.supabase.createClient(
+  "https://xswyiwlmxolfbqevqhqu.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhzd3lpd2xteG9sZmJxZXZxaHF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMDY1MTEsImV4cCI6MjA3MTg4MjUxMX0.scmwfGWUBm9gHVcLDVNzCADYtXsTIAPySxqArZPD0qk"
+);
+
+document.addEventListener('DOMContentLoaded', async function () {
   const filtreCategorie = document.getElementById('filtreCategorie');
   const filtrePrix = document.getElementById('filtrePrix');
   const listeProduits = document.getElementById('liste-produits');
   const pagination = document.getElementById('pagination');
   const searchInput = document.getElementById('search-input');
 
-  // Exemple de produits
-  const produits = [
-    { id: 1, nom: "Samsung A12", categorie: "telephone", prix: "100-300", images: ["IMG-20250806-WA0001.jpg", "IMG-20250806-WA0002.jpg"], description: "Téléphone 64Go" },
-    { id: 2, nom: "iPhone 11", categorie: "telephone", prix: "plus-300", images: ["IMG-20250806-WA0002.jpg", "IMG-20250806-WA0006.jpg"], description: "iPhone original" },
-    { id: 3, nom: "Casque JBL", categorie: "casque", prix: "moins-100", images: ["casque1.jpg"], description: "Son de qualité JBL" },
-    { id: 4, nom: "Chargeur Samsung", categorie: "chargeur", prix: "moins-100", images: ["IMG-20250806-WA0003.jpg"], description: "Charge rapide 25W" },
-    { id: 5, nom: "iPad Mini", categorie: "tablette", prix: "plus-300", images: ["IMG-20250806-WA0001.jpg"], description: "Tablette compacte" },
-    { id: 6, nom: "Tablette Lenovo", categorie: "tablette", prix: "100-300", images: ["IMG-20250806-WA0004.jpg"], description: "Écran 10.1'' HD" },
-    { id: 7, nom: "Xiaomi Redmi", categorie: "telephone", prix: "100-300", images: ["IMG-20250806-WA0002.jpg"], description: "Excellent rapport qualité/prix" },
-    { id: 8, nom: "Chargeur Infinix", categorie: "chargeur", prix: "moins-100", images: ["IMG-20250806-WA0006.jpg"], description: "Chargeur original" }
-  ];
-
-  let produitsFiltres = [...produits];
+  let produits = [];
+  let produitsFiltres = [];
   const parPage = 4;
   let pageActuelle = 1;
 
+  // 🔽 Charger les produits
+  async function chargerProduits() {
+    const { data, error } = await supabase.from("produits").select("*");
+    if (error) {
+      console.error("Erreur:", error.message);
+      return [];
+    }
+    return data;
+  }
+
+  // 🔽 Formater le prix
   function formatPrix(code) {
     switch (code) {
       case "moins-100": return "Moins de 100$";
       case "100-300": return "100$ - 300$";
       case "plus-300": return "Plus de 300$";
-      default: return "";
+      default: return "Non spécifié";
     }
   }
 
+  // 🔽 Générer HTML d'un produit
   function genererHTMLProduit(produit) {
     const carrouselId = `carousel-${produit.id}`;
-    const imagesHTML = produit.images.map((img, i) => `
-      <div class="carousel-item ${i === 0 ? 'active' : ''}">
-        <img src="images/produits/${img}" class="d-block w-100" alt="${produit.nom}">
-      </div>`).join("");
+    const imagesHTML = (produit.images || []).map((img, i) => {
+      const { data } = supabase.storage.from("produits").getPublicUrl(img);
+      const urlImage = data?.publicUrl || "images/placeholder.jpg";
+      return `
+        <div class="carousel-item ${i === 0 ? 'active' : ''}">
+          <img src="${urlImage}" class="d-block w-100" alt="${produit.nom}">
+        </div>
+      `;
+    }).join("");
 
-    const lienWhatsapp = `https://wa.me/50947634103?text=${encodeURIComponent(`Bonjour, je suis intéressé par :\n- Produit : ${produit.nom}\n- Description : ${produit.description}\n- Prix : ${formatPrix(produit.prix)}`)}`;
+    const lienWhatsapp = `https://wa.me/50947634103?text=${encodeURIComponent(
+      `Bonjour, je suis intéressé par :
+- Produit : ${produit.nom}
+- Description : ${produit.description}
+- Prix : ${formatPrix(produit.prix)}`
+    )}`;
 
     return `
       <div class="row produit mb-4">
@@ -63,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
     `;
   }
 
+  // 🔽 Afficher produits par page
   function afficherProduits(page) {
     listeProduits.innerHTML = "";
     const start = (page - 1) * parPage;
@@ -76,10 +94,10 @@ document.addEventListener('DOMContentLoaded', function () {
     genererPagination(page);
   }
 
+  // 🔽 Pagination
   function genererPagination(page) {
     pagination.innerHTML = "";
     const totalPages = Math.ceil(produitsFiltres.length / parPage);
-
     for (let i = 1; i <= totalPages; i++) {
       pagination.innerHTML += `
         <li class="page-item ${i === page ? 'active' : ''}">
@@ -96,41 +114,41 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // 🔽 Filtres
   function filtrerProduits() {
     const cat = filtreCategorie.value;
     const prix = filtrePrix.value;
     const searchTerm = searchInput.value.toLowerCase();
-
     produitsFiltres = produits.filter(p => {
       const matchCat = !cat || p.categorie === cat;
       const matchPrix = !prix || p.prix === prix;
       const matchSearch = p.nom.toLowerCase().includes(searchTerm);
       return matchCat && matchPrix && matchSearch;
     });
-
     pageActuelle = 1;
     afficherProduits(pageActuelle);
   }
 
+  // 🔽 Écouteurs
   filtreCategorie.addEventListener('change', filtrerProduits);
   filtrePrix.addEventListener('change', filtrerProduits);
   searchInput.addEventListener('input', filtrerProduits);
 
+  // 🔽 Charger au démarrage
+  produits = await chargerProduits();
+  produitsFiltres = [...produits];
   afficherProduits(pageActuelle);
 });
 
-
-// Slider Hero en background
+// 🔄 Slider Hero
 document.addEventListener('DOMContentLoaded', () => {
   const slides = document.querySelectorAll('.hero-slide');
   let current = 0;
-
   function changerImageHero() {
     slides.forEach(slide => slide.classList.remove('active'));
     slides[current].classList.add('active');
     current = (current + 1) % slides.length;
   }
-
   changerImageHero();
   setInterval(changerImageHero, 5000);
 });
